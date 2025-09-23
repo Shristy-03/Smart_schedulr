@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backend Workflow Diagram</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; background:#0b1020; color:#e6eaf2; }
+      .container { max-width: 1200px; margin: 0 auto; }
+      h1 { font-weight: 600; font-size: 20px; margin: 0 0 16px; }
+      .card { background: #121a31; border: 1px solid #1c294a; border-radius: 12px; padding: 16px; }
+      .mermaid { background:#0b1020; border-radius: 8px; }
+      a { color: #9cd2ff; }
+    </style>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Backend Workflow Diagram</h1>
+      <div class="card">
+        <div class="mermaid">
+flowchart TD
+  A[Frontend (Browser/Client)] -->|HTTP request| B[Express App]
+
+  subgraph M[Global Middleware]
+    B --> C1[helmet]
+    C1 --> C2[cors (origin: true, credentials: true)]
+    C2 --> C3[express.json()]
+    C3 --> C4[morgan('dev')]
+  end
+
+  C4 --> R{Route Matching}
+
+  R -->|GET /health| H[Health Controller]
+  H -->|res.json({ status: 'ok' })| RESP[HTTP Response]
+
+  R -->|POST /auth/login| AUTH_ROUTE[/auth router/]
+  AUTH_ROUTE --> LOGIN[Auth Controller.login]
+  LOGIN -->|bcrypt.compareSync| DB1[(In-memory DB: users)]
+  LOGIN -->|signToken (JWT)| JWT[JWT Signed]
+  JWT --> RESP
+
+  R -->|/users, /courses, /classrooms, /faculty, /timetable| PR[Protected Routers]
+
+  subgraph A0[Auth Gate]
+    PR --> A1[authMiddleware(requiredRoles=['admin'])]
+    A1 -->|verify JWT + role| A2{Authorized?}
+    A2 -- No --> ERR1[AppError('Unauthorized'/'Forbidden')]
+    ERR1 --> EH[Global errorHandler]
+    EH -->|res.status(code).json({ error })| RESP
+  end
+
+  A2 -- Yes --> CR{Controller}
+
+  CR -->|Users CRUD| UCTRL[User Controller]
+  UCTRL --> DB1
+  UCTRL --> RESP
+
+  CR -->|Courses CRUD| CCTRL[Course Controller]
+  CCTRL --> DB2[(In-memory DB: courses)]
+  CCTRL --> RESP
+
+  CR -->|Classrooms CRUD| CLCTRL[Classroom Controller]
+  CLCTRL --> DB3[(In-memory DB: classrooms)]
+  CLCTRL --> RESP
+
+  CR -->|Faculty CRUD| FCTRL[Faculty Controller]
+  FCTRL --> DB4[(In-memory DB: faculty)]
+  FCTRL --> RESP
+
+  CR -->|Timetable| TTCTRL[Timetable Controller]
+  TTCTRL --> SCHED[services/scheduler.generateTimetable]
+  SCHED --> DB5[(In-memory DB: timetables)]
+  TTCTRL --> RESP
+
+  %% Errors anywhere in pipeline
+  B -. throws/next(err) .-> EH
+  CR -. throws/next(err) .-> EH
+        </div>
+      </div>
+      <p style="margin-top:16px">Markdown version: <a href="workflow.md">docs/workflow.md</a></p>
+    </div>
+  </body>
+  </html>
+
+
+

@@ -1,0 +1,60 @@
+### Health
+GET http://localhost:3000/health
+
+### Login (Admin)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+### Set token variable in your client after login
+# @token = paste_token_here
+
+### List users
+GET http://localhost:3000/users
+Authorization: Bearer {{token}}
+
+### Create user
+POST http://localhost:3000/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Faculty",
+  "email": "newfac@example.com",
+  "role": "faculty",
+  "password": "password",
+  "department": "CSE"
+}
+
+### List courses
+GET http://localhost:3000/courses
+Authorization: Bearer {{token}}
+
+### Generate timetable (2 choices)
+POST http://localhost:3000/timetable/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "choices": 2 }
+
+### Get choices
+GET http://localhost:3000/timetable/choices
+Authorization: Bearer {{token}}
+
+### Conflicts and suggestions (on latest)
+POST http://localhost:3000/timetable/conflicts
+Authorization: Bearer {{token}}
+
+### Approve a choice
+POST http://localhost:3000/timetable/review
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "approvedId": "tt-id-from-choices" }
+
+
+
